@@ -1,0 +1,9 @@
+[package]
+name = "adaptive_engine"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+types = {path = "../types"}
+eval = {path = "../eval"}
+search = {path = "../search"}

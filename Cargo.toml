@@ -1,0 +1,16 @@
+[package]
+name = "kishmat"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+members = [
+    "adaptive_engine",
+    "types",
+    "cli",
+    "eval",
+    "tests",
+    "search",
+    "comms"
+]
+[dependencies]
