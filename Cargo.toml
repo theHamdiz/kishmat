@@ -7,10 +7,15 @@ edition = "2021"
 members = [
     "adaptive_engine",
     "types",
-    "cli",
     "eval",
     "tests",
     "search",
     "comms"
 ]
 [dependencies]
+clap = "4.5.16"
+adaptive_engine = { path = "./adaptive_engine" }
+comms = { path = "./comms" }
+types = { path = "./types" }
+search = { path = "./search" }
+eval = { path = "./eval" }

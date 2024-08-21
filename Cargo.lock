@@ -88,18 +88,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1462739cb27611015575c0c11df5df7601141071f07518d56fcc1be504cbec97"
 
 [[package]]
-name = "cli"
-version = "0.1.0"
-dependencies = [
- "adaptive_engine",
- "clap",
- "comms",
- "eval",
- "search",
- "types",
-]
-
-[[package]]
 name = "colorchoice"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -125,6 +113,14 @@ checksum = "7943c866cc5cd64cbc25b2e01621d07fa8eb2a1a23160ee81ce38704e97b8ecf"
 [[package]]
 name = "kishmat"
 version = "0.1.0"
+dependencies = [
+ "adaptive_engine",
+ "clap",
+ "comms",
+ "eval",
+ "search",
+ "types",
+]
 
 [[package]]
 name = "search"
