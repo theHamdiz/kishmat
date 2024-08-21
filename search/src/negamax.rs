@@ -25,7 +25,7 @@ pub fn negamax(
     }
 
     for (from, to) in moves {
-        let piece = board.get_piece_at_square(from);
+        let (piece, color) = board.get_piece_at_square(from).expect("Could not get piece at a given square");
         board.make_move(from, to, piece, color);
         let eval = -negamax(board, depth - 1, -beta, -alpha, color.opponent(), transposition_table);
         board.unmake_move(from, to, piece, color);

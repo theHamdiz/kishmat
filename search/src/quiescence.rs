@@ -12,7 +12,7 @@ pub fn quiescence_search(board: &mut Board, alpha: i32, beta: i32, color: Color)
     let moves = board.generate_captures(color);
 
     for (from, to) in moves {
-        let piece = board.get_piece_at_square(from);
+        let (piece, color) = board.get_piece_at_square(from).expect("Could not get piece at a given square");
         board.make_move(from, to, piece, color);
         let eval = -quiescence_search(board, -beta, -alpha, color.opponent());
         board.unmake_move(from, to, piece, color);

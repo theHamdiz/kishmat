@@ -20,7 +20,7 @@ pub fn late_move_reductions(
 
     for (index, (from, to)) in moves.iter().enumerate() {
         let reduction = if index > 3 { 1 } else { 0 };
-        let piece = board.get_piece_at_square(*from);
+        let (piece, color) = board.get_piece_at_square(*from).expect("Could not get piece at a given square");
         board.make_move(*from, *to, piece, color);
         let eval = -alpha_beta(board, depth - 1 - reduction, -beta, -alpha, color.opponent(), transposition_table);
         board.unmake_move(*from, *to, piece, color);
