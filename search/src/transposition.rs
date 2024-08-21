@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use types::{Board, Square};
+use types::Square;
 
 pub struct TranspositionTable {
     table: HashMap<u64, TranspositionEntry>,

@@ -3,15 +3,6 @@
 version = 3
 
 [[package]]
-name = "adaptive_engine"
-version = "0.1.0"
-dependencies = [
- "eval",
- "search",
- "types",
-]
-
-[[package]]
 name = "anstream"
 version = "0.6.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -58,6 +49,15 @@ checksum = "5bf74e1b6e971609db8ca7a9ce79fd5768ab6ae46441c572e46cf596f59e57f8"
 dependencies = [
  "anstyle",
  "windows-sys",
+]
+
+[[package]]
+name = "arbiter"
+version = "0.1.0"
+dependencies = [
+ "eval",
+ "search",
+ "types",
 ]
 
 [[package]]
@@ -114,7 +114,7 @@ checksum = "7943c866cc5cd64cbc25b2e01621d07fa8eb2a1a23160ee81ce38704e97b8ecf"
 name = "kishmat"
 version = "0.1.0"
 dependencies = [
- "adaptive_engine",
+ "arbiter",
  "clap",
  "comms",
  "eval",
@@ -134,10 +134,6 @@ name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
-
-[[package]]
-name = "tests"
-version = "0.1.0"
 
 [[package]]
 name = "types"

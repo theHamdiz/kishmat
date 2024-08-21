@@ -8,7 +8,7 @@ pub fn evaluate_material(board: &Board) -> i32 {
 
     for color in [Color::White, Color::Black].iter() {
         for piece in [Piece::Pawn, Piece::Knight, Piece::Bishop, Piece::Rook, Piece::Queen].iter() {
-            let piece_count = board.piece_count(*piece);
+            let piece_count = board.piece_count(*piece, *color);
             score += piece_count as i32 * PIECE_VALUES[*piece as usize] * if *color == Color::White { 1 } else { -1 };
         }
     }

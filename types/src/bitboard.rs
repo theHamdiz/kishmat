@@ -4,22 +4,22 @@ pub const FULL_BOARD: Bitboard = 0xFFFF_FFFF_FFFF_FFFF;
 
 #[inline(always)]
 pub fn set_bit(board: &mut Bitboard, square: usize) {
-    *board |= 1 << square;
+    *board |= 1u64 << square;
 }
 
 #[inline(always)]
 pub fn clear_bit(board: &mut Bitboard, square: usize) {
-    *board &= !(1 << square);
+    *board &= !(1u64 << square);
 }
 
 #[inline(always)]
 pub fn is_bit_set(board: Bitboard, square: usize) -> bool {
-    board & (1 << square) != 0
+    (board & (1u64 << square)) != 0
 }
 
 #[inline(always)]
 pub fn count_bits(board: Bitboard) -> u32 {
-    board.count_ones()
+    board.count_ones() // Modern CPUs are optimized for this intrinsic
 }
 
 #[inline(always)]

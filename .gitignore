@@ -1,5 +1,5 @@
 /target
-adaptive_engine/target/*
+arbiter/target/*
 cli/target/*
 comms/target/*
 eval/target/*

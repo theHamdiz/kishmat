@@ -5,11 +5,11 @@ use strategy::{choose_search_strategy, choose_evaluation_strategy};
 use types::{Board, Color, Square};
 use search::TranspositionTable;
 
-pub struct AdaptiveEngine {
+pub struct Arbiter {
     transposition_table: TranspositionTable,
 }
 
-impl AdaptiveEngine {
+impl Arbiter {
     pub fn new() -> Self {
         Self {
             transposition_table: TranspositionTable::new(),

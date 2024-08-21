@@ -1,4 +1,4 @@
-use types::{Bitboard, Square, Color, Board};
+use types::{Bitboard, Square, Color, Board, clear_bit, get_lsb};
 
 const ISOLATED_PAWN_PENALTY: i32 = -10;
 const DOUBLED_PAWN_PENALTY: i32 = -20;
@@ -8,21 +8,26 @@ const PASSED_PAWN_BONUS: i32 = 50;
 pub fn evaluate_pawn_structure(board: &Board) -> i32 {
     let mut score = 0;
 
-    for color in [Color::White, Color::Black].iter() {
-        let pawns = board.pawns(*color);
+    for &color in &[Color::White, Color::Black] {
+        let pawns = board.pawns(color);
+        let color_multiplier = if color == Color::White { 1 } else { -1 };
 
         // Evaluate isolated pawns
-        for &pawn_square in pawns.iter() {
-            if is_isolated(board, *color, pawn_square) {
-                score += ISOLATED_PAWN_PENALTY * if *color == Color::White { 1 } else { -1 };
+        let mut pawn_bitboard = pawns;
+        while pawn_bitboard != 0 {
+            let pawn_square_index = get_lsb(pawn_bitboard);  // Get the index of the least significant bit
+            let pawn_square = Square::from_index(pawn_square_index);  // Convert to Square
+            if is_isolated(board, color, pawn_square) {
+                score += ISOLATED_PAWN_PENALTY * color_multiplier;
             }
+            clear_bit(&mut pawn_bitboard, pawn_square_index);  // Clear the processed bit
         }
 
         // Evaluate doubled pawns
-        score += evaluate_doubled_pawns(board, *color) * if *color == Color::White { 1 } else { -1 };
+        score += evaluate_doubled_pawns(board, color) * color_multiplier;
 
         // Evaluate passed pawns
-        score += evaluate_passed_pawns(board, *color) * if *color == Color::White { 1 } else { -1 };
+        score += evaluate_passed_pawns(board, color) * color_multiplier;
     }
 
     score

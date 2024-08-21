@@ -1,4 +1,4 @@
-use types::{Piece, Square, Color, Board};
+use types::{Board, Color, Piece};
 
 const PAWN_PSQT: [i32; 64] = [
     0,  5,  5, -5, -5,  5,  5,  0,
@@ -17,7 +17,7 @@ pub fn evaluate_psqt(board: &Board) -> i32 {
 
     for color in [Color::White, Color::Black].iter() {
         for piece in [Piece::Pawn, Piece::Knight, Piece::Bishop, Piece::Rook, Piece::Queen].iter() {
-            let piece_squares = board.piece_squares(*color, *piece);
+            let piece_squares = board.piece_squares(*piece, *color );
             for &square in piece_squares.iter() {
                 let index = if *color == Color::White { square.to_index() } else { 63 - square.to_index() };
                 score += psqt_value(*piece, index) * if *color == Color::White { 1 } else { -1 };

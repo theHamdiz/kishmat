@@ -1,7 +1,6 @@
-use types::{Board, Color};
-use crate::alpha_beta::alpha_beta;
-use crate::transposition::TranspositionTable;
 use crate::quiescence::quiescence_search;
+use crate::transposition::TranspositionTable;
+use types::{Board, Color};
 
 pub fn negamax(
     board: &mut Board,

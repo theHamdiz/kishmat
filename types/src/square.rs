@@ -19,6 +19,7 @@ impl Square {
 
     #[inline(always)]
     pub fn from_index(index: usize) -> Self {
+        debug_assert!(index < 64, "Index out of bounds for Square");
         unsafe { std::mem::transmute(index as u8) }
     }
 }

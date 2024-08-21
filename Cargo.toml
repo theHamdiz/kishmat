@@ -2,20 +2,27 @@
 name = "kishmat"
 version = "0.1.0"
 edition = "2021"
+authors = ["Ahmad Hamdi Emara"]
+categories = ["games", "game-engines"]
+description = "The first Arabian chess engine written in Rust"
+license = "MIT"
+repository = "https://github.com/theHamdiz/kishmat"
+readme = "README.md"
 
 [workspace]
 members = [
-    "adaptive_engine",
+    "arbiter",
     "types",
     "eval",
-    "tests",
     "search",
     "comms"
 ]
 [dependencies]
 clap = "4.5.16"
-adaptive_engine = { path = "./adaptive_engine" }
-comms = { path = "./comms" }
-types = { path = "./types" }
-search = { path = "./search" }
-eval = { path = "./eval" }
+arbiter = { path = "arbiter" }
+comms = { path = "comms" }
+types = { path = "types" }
+search = { path = "search" }
+eval = { path = "eval" }
+
+

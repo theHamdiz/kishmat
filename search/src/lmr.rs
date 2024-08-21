@@ -1,6 +1,6 @@
 use crate::alpha_beta::alpha_beta;
 use crate::transposition::TranspositionTable;
-use types::{Board, Color, Square};
+use types::{Board, Color};
 
 pub fn late_move_reductions(
     board: &mut Board,
