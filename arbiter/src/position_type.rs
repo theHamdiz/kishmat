@@ -1,4 +1,4 @@
-use types::{Board, Piece};
+use types::{Board, Color, Piece};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PositionType {
@@ -11,10 +11,10 @@ pub enum PositionType {
     Trivial,
 }
 
-pub fn determine_position_type(board: &Board) -> PositionType {
+pub fn determine_position_type(board: &Board, color: Color) -> PositionType {
     let material_count = board.material_count();
-    let pawn_count = board.piece_count(Piece::Pawn);
-    let mobility = board.mobility();
+    let pawn_count = board.piece_count(Piece::Pawn, color);
+    let mobility = board.mobility(color);
 
     if material_count < 20 {
         PositionType::Endgame

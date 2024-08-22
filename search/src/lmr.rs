@@ -1,8 +1,9 @@
-use crate::alpha_beta::alpha_beta;
 use crate::transposition::TranspositionTable;
 use types::{Board, Color};
+use crate::Search;
 
-pub fn late_move_reductions(
+impl Search{
+    pub fn late_move_reductions(
     board: &mut Board,
     depth: i32,
     alpha: i32,
@@ -11,7 +12,7 @@ pub fn late_move_reductions(
     transposition_table: &mut TranspositionTable,
 ) -> i32 {
     if depth <= 1 {
-        return alpha_beta(board, depth, alpha, beta, color, transposition_table);
+        return Self::alpha_beta(board, depth, alpha, beta, color, transposition_table).0;
     }
 
     let moves = board.generate_legal_moves(color);
@@ -22,7 +23,7 @@ pub fn late_move_reductions(
         let reduction = if index > 3 { 1 } else { 0 };
         let (piece, color) = board.get_piece_at_square(*from).expect("Could not get piece at a given square");
         board.make_move(*from, *to, piece, color);
-        let eval = -alpha_beta(board, depth - 1 - reduction, -beta, -alpha, color.opponent(), transposition_table);
+        let eval = -Self::alpha_beta(board, depth - 1 - reduction, -beta, -alpha, color.opponent(), transposition_table).0;
         board.unmake_move(*from, *to, piece, color);
 
         best_eval = best_eval.max(eval);
@@ -33,4 +34,5 @@ pub fn late_move_reductions(
     }
 
     best_eval
+}
 }

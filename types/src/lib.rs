@@ -2,8 +2,12 @@ pub mod square;
 pub mod piece;
 pub mod bitboard;
 pub mod board;
+pub mod zobrist;
+pub mod game_state;
 
 pub use square::Square;
-pub use piece::{Piece, Color};
-pub use bitboard::{Bitboard, FULL_BOARD, set_bit, clear_bit, is_bit_set, count_bits, get_lsb};
+pub use piece::{Color, Piece};
+pub use bitboard::{clear_bit, count_bits, get_lsb, is_bit_set, set_bit, Bitboard, FULL_BOARD};
 pub use board::Board;
+pub use zobrist::Zobrist;
+pub use game_state::GameState;

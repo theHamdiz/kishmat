@@ -1,8 +1,8 @@
 use types::{Board, Color, Square};
-use search::{negamax, iterative_deepening, late_move_reductions};
+use search::{Search};
 use eval::{Evaluation};
 use crate::position_type::PositionType;
-use search::TranspositionTable;
+use search::transposition::TranspositionTable;
 
 pub fn choose_search_strategy(position_type: PositionType) -> fn(&mut Board, i32, Color, &mut TranspositionTable) -> (Square, Square) {
     match position_type {
@@ -15,28 +15,43 @@ pub fn choose_search_strategy(position_type: PositionType) -> fn(&mut Board, i32
 }
 
 fn iterative_deepening_strategy(board: &mut Board, max_depth: i32, color: Color, transposition_table: &mut TranspositionTable) -> (Square, Square) {
-    iterative_deepening(board, max_depth, color, transposition_table)
+    Search::iterative_deepening(board, max_depth, color, transposition_table)
 }
 
 fn negamax_strategy(board: &mut Board, max_depth: i32, color: Color, transposition_table: &mut TranspositionTable) -> (Square, Square) {
-    let mut best_move = None;
-    let eval = negamax(board, max_depth, i32::MIN, i32::MAX, color, transposition_table);
-    if let Some(m) = board.best_move() {
-        best_move = Some(m);
-    }
-    best_move.expect("No valid move found")
+    Search::best_move(board, max_depth, color, transposition_table)
 }
 
 fn lmr_strategy(board: &mut Board, max_depth: i32, color: Color, transposition_table: &mut TranspositionTable) -> (Square, Square) {
     let mut best_move = None;
-    let eval = late_move_reductions(board, max_depth, i32::MIN, i32::MAX, color, transposition_table);
-    if let Some(m) = board.best_move() {
-        best_move = Some(m);
+    let mut best_score = i32::MIN;
+    let mut alpha = i32::MIN;
+    let beta = i32::MAX;
+
+    let legal_moves = board.generate_legal_moves(color);
+    for m in legal_moves {
+        let piece = board.get_piece_at_square(m.0).expect("No piece found at source square").0;
+
+        board.make_move(m.0, m.1, piece, color);
+        let score = -Search::late_move_reductions(board, max_depth - 1, -beta, -alpha, color.opponent(), transposition_table);
+        board.unmake_move(m.0, m.1, piece, color);
+
+        if score > best_score {
+            best_score = score;
+            best_move = Some(m);
+        }
+
+        alpha = alpha.max(score);
+        if alpha >= beta {
+            break; // Beta cutoff
+        }
     }
+
     best_move.expect("No valid move found")
 }
 
-pub fn choose_evaluation_strategy(position_type: PositionType) -> fn(&Board) -> i32 {
+
+pub fn choose_evaluation_strategy(position_type: PositionType) -> fn(&Board, color: Color) -> i32 {
     match position_type {
         PositionType::Endgame => endgame_evaluation_strategy,
         PositionType::Complex => complex_evaluation_strategy,
@@ -44,17 +59,14 @@ pub fn choose_evaluation_strategy(position_type: PositionType) -> fn(&Board) -> 
     }
 }
 
-fn general_evaluation_strategy(board: &Board) -> i32 {
-    let mut evaluation = Evaluation::new();
-    evaluation.evaluate(board)
+fn general_evaluation_strategy(board: &Board, color: Color) -> i32 {
+    Evaluation::evaluate(board, color)
 }
 
-fn endgame_evaluation_strategy(board: &Board) -> i32 {
-    let mut evaluation = Evaluation::new();
-    evaluation.evaluate(board)
+fn endgame_evaluation_strategy(board: &Board, color: Color) -> i32 {
+    Evaluation::evaluate(board, color)
 }
 
-fn complex_evaluation_strategy(board: &Board) -> i32 {
-    let mut evaluation = Evaluation::new();
-    evaluation.evaluate(board)
+fn complex_evaluation_strategy(board: &Board, color: Color) -> i32 {
+    Evaluation::evaluate(board, color)
 }

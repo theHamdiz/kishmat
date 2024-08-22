@@ -26,10 +26,20 @@ pub enum Color {
 }
 
 impl Color {
+    #[inline(always)]
     pub fn opponent(self) -> Self {
         match self {
             Color::White => Color::Black,
             Color::Black => Color::White,
+        }
+    }
+
+    #[inline(always)]
+    pub fn from_u8(value: u8) -> Option<Self> {
+        match value {
+            0 => Some(Color::White),
+            1 => Some(Color::Black),
+            _ => None
         }
     }
 }

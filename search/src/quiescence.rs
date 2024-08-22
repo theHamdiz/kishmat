@@ -1,7 +1,11 @@
+use eval::evaluation::Evaluation;
 use types::{Board, Color};
+use crate::Search;
 
-pub fn quiescence_search(board: &mut Board, alpha: i32, beta: i32, color: Color) -> i32 {
-    let stand_pat = board.evaluate(color);
+impl Search{
+    pub fn quiescence_search(board: &mut Board, alpha: i32, beta: i32, color: Color) -> i32 {
+
+        let stand_pat = Evaluation::evaluate(&board, color);
     if stand_pat >= beta {
         return beta;
     }
@@ -14,7 +18,7 @@ pub fn quiescence_search(board: &mut Board, alpha: i32, beta: i32, color: Color)
     for (from, to) in moves {
         let (piece, color) = board.get_piece_at_square(from).expect("Could not get piece at a given square");
         board.make_move(from, to, piece, color);
-        let eval = -quiescence_search(board, -beta, -alpha, color.opponent());
+        let eval = -Self::quiescence_search(board, -beta, -alpha, color.opponent());
         board.unmake_move(from, to, piece, color);
 
         best_eval = best_eval.max(eval);
@@ -25,4 +29,5 @@ pub fn quiescence_search(board: &mut Board, alpha: i32, beta: i32, color: Color)
     }
 
     best_eval
+}
 }

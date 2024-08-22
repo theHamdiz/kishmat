@@ -1,4 +1,4 @@
-use types::{Bitboard, Square, Color, Board};
+use types::{Bitboard, Board, Color};
 
 const KING_SAFETY_TABLE: [i32; 64] = [
     -30, -40, -40, -50, -50, -40, -40, -30,

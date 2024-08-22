@@ -10,8 +10,8 @@ use commands::{run_analyze, run_play};
 fn main() {
     let matches = Command::new("Chess Engine CLI")
         .version("0.1.0")
-        .author("Your Name <youremail@example.com>")
-        .about("Command-line interface for interacting with the chess engine")
+        .author("Ahmad Hamdi <contact@hamdiz.me>")
+        .about("Command-line interface for interacting with KishMat engine")
         .subcommand(
             Subcommand::with_name("play")
                 .about("Play a game against the engine")

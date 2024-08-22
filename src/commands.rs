@@ -1,8 +1,8 @@
-use adaptive_engine::AdaptiveEngine;
+use arbiter::Arbiter;
 use types::Board;
 
 pub fn run_play(depth: u32) {
-    let mut engine = AdaptiveEngine::new();
+    let mut engine = Arbiter::new();
     let mut board = Board::new();
     let color = types::Color::White;  // Assume the player is white for simplicity
 
@@ -18,7 +18,7 @@ pub fn run_play(depth: u32) {
 }
 
 pub fn run_analyze(fen: &str, depth: u32) {
-    let mut engine = AdaptiveEngine::new();
+    let mut engine = Arbiter::new();
     let board = Board::from_fen(fen).expect("Invalid FEN string");
     let color = types::Color::White;  // Assume analyzing for White
 

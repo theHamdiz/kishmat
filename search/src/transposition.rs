@@ -12,6 +12,14 @@ pub struct TranspositionEntry {
     pub best_move: Option<(Square, Square)>,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum NodeType {
+    Exact,
+    Alpha,
+    Beta,
+}
+
+
 impl TranspositionTable {
     pub fn new() -> Self {
         Self {
@@ -25,6 +33,18 @@ impl TranspositionTable {
 
     pub fn insert(&mut self, key: u64, entry: TranspositionEntry) {
         self.table.insert(key, entry);
+    }
+
+    pub fn store(&mut self, zobrist_key: u64, entry: TranspositionEntry) {
+        self.table.insert(zobrist_key, entry);
+    }
+
+    pub fn lookup_best_move(&self, zobrist_key: u64) -> Option<(Square, Square)> {
+        if let Some(entry) = self.table.get(&zobrist_key) {
+            entry.best_move
+        } else {
+            None
+        }
     }
 }
 

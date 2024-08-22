@@ -22,4 +22,9 @@ impl Square {
         debug_assert!(index < 64, "Index out of bounds for Square");
         unsafe { std::mem::transmute(index as u8) }
     }
+
+    #[inline(always)]
+    pub fn rank(self) -> usize {
+        self.to_index() / 8
+    }
 }

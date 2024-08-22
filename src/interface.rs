@@ -1,9 +1,9 @@
-use adaptive_engine::AdaptiveEngine;
+use arbiter::Arbiter;
 use types::{Board, Square, Color};
 use std::io::{self, Write};
 
 pub fn run_interactive() {
-    let mut engine = AdaptiveEngine::new();
+    let mut engine = Arbiter::new();
     let mut board = Board::new();
     let color = Color::White;  // Assume the player is white for simplicity
 
