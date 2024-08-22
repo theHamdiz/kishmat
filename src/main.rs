@@ -8,54 +8,51 @@ use interface::run_interactive;
 use commands::{run_analyze, run_play};
 
 fn main() {
-    let matches = Command::new("Chess Engine CLI")
+    let matches = Command::new("KishMat Chess Engine CLI")
         .version("0.1.0")
         .author("Ahmad Hamdi <contact@hamdiz.me>")
         .about("Command-line interface for interacting with KishMat engine")
         .subcommand(
-            Subcommand::with_name("play")
+            Command::new("play")
                 .about("Play a game against the engine")
                 .arg(
-                    Arg::with_name("depth")
-                        .short("d")
+                    Arg::new("depth")
+                        .short('d')
                         .long("depth")
                         .value_name("DEPTH")
                         .help("Sets the search depth")
-                        .takes_value(true),
                 ),
         )
         .subcommand(
-            Subcommand::with_name("analyze")
+            Command::new("analyze")
                 .about("Analyze a given position")
                 .arg(
-                    Arg::with_name("fen")
-                        .short("f")
+                    Arg::new("fen")
+                        .short('f')
                         .long("fen")
                         .value_name("FEN")
                         .help("Provide the FEN string of the position to analyze")
-                        .takes_value(true),
                 )
                 .arg(
-                    Arg::with_name("depth")
-                        .short("d")
+                    Arg::new("depth")
+                        .short('d')
                         .long("depth")
                         .value_name("DEPTH")
                         .help("Sets the search depth")
-                        .takes_value(true),
                 ),
         )
         .subcommand(
-            Subcommand::with_name("interactive")
+            Command::new("interactive")
                 .about("Run the engine in interactive mode")
         )
         .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("play") {
-        let depth = matches.value_of("depth").unwrap_or("5").parse().unwrap();
+        let depth = matches.get_one::<&str>("depth").unwrap_or(&"5").parse().unwrap();
         run_play(depth);
     } else if let Some(matches) = matches.subcommand_matches("analyze") {
-        let fen = matches.value_of("fen").expect("FEN string is required");
-        let depth = matches.value_of("depth").unwrap_or("5").parse().unwrap();
+        let fen = *matches.get_one::<&str>("fen").expect("FEN string is required");
+        let depth = matches.get_one::<&str>("depth").unwrap_or(&"5").parse().unwrap();
         run_analyze(fen, depth);
     } else if let Some(_) = matches.subcommand_matches("interactive") {
         run_interactive();

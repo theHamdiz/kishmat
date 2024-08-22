@@ -1,6 +1,7 @@
-use crate::{clear_bit, count_bits, get_lsb, is_bit_set, set_bit, Bitboard, Color, Piece, Square};
 use crate::zobrist::Zobrist;
+use crate::{clear_bit, count_bits, get_lsb, is_bit_set, Bitboard, Color, Piece, Square};
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Board {
     bishop_masks: [Bitboard; 64],
     bishop_magics: [u64; 64],
@@ -12,13 +13,13 @@ pub struct Board {
     rook_shifts: [u8; 64],
     rook_attack_tables: Vec<Vec<Bitboard>>,
     
-    pieces: [Bitboard; 12], // 6 pieces for each color
-    occupancy: [Bitboard; 2], // Occupancy for each color
+    pub(crate) pieces: [Bitboard; 12], // 6 pieces for each color
+    pub(crate) occupancy: [Bitboard; 2], // Occupancy for each color
     pub side_to_move: Color,
-    castling_rights: u8, // 4 bits for castling rights
-    en_passant: Option<Square>,
-    halfmove_clock: u32,
-    fullmove_number: u32,
+    pub(crate) castling_rights: u8, // 4 bits for castling rights
+    pub(crate) en_passant: Option<Square>,
+    pub(crate) halfmove_clock: u32,
+    pub(crate) fullmove_number: u32,
 }
 
 impl Default for Board {
@@ -49,7 +50,6 @@ impl Board {
     pub fn new() -> Self {
         Self::default()
     }
-
      pub fn material_count(&self) -> i32 {
         const PAWN_VALUE: i32 = 100;
         const KNIGHT_VALUE: i32 = 315;
@@ -90,26 +90,7 @@ impl Board {
         mobility_score
     }
     
-    pub fn is_complex(&self) -> bool {
-        const COMPLEXITY_THRESHOLD: i32 = 20;
-
-        // Calculate total piece count for both sides
-        let total_pieces = self.total_piece_count();
-
-        // Calculate the mobility for both sides
-        let white_mobility = self.mobility(Color::White);
-        let black_mobility = self.mobility(Color::Black);
-
-        // A simple complexity heuristic: 
-        // - If there are a lot of pieces on the board,
-        // - If mobility is high,
-        // Then the position is considered complex.
-        let complexity_score = total_pieces + white_mobility + black_mobility;
-
-        complexity_score > COMPLEXITY_THRESHOLD
-    }
-
-    fn total_piece_count(&self) -> i32 {
+    pub(crate) fn total_piece_count(&self) -> i32 {
         // Count the total number of pieces for both sides
         let mut total_count = 0;
 
@@ -122,49 +103,6 @@ impl Board {
         total_count
     }
     
-    #[inline(always)]
-    pub fn make_move(&mut self, from: Square, to: Square, piece: Piece, color: Color) {
-        let piece_index = self.get_piece_index(piece, color);
-        clear_bit(&mut self.pieces[piece_index], from.to_index());
-        set_bit(&mut self.pieces[piece_index], to.to_index());
-
-        // Handle en passant, castling, and other special moves
-        self.en_passant = None; // Reset en passant target square
-        if piece == Piece::Pawn && (to.to_index() as i32 - from.to_index() as i32).abs() == 16 {
-            self.en_passant = Some(Square::from_index((from.to_index() + to.to_index()) / 2));
-        }
-
-        self.update_occupancy();
-        self.side_to_move = self.side_to_move.opponent();
-        self.halfmove_clock += 1;
-        if color == Color::Black {
-            self.fullmove_number += 1;
-        }
-    }
-
-    #[inline(always)]
-    pub fn unmake_move(&mut self, from: Square, to: Square, piece: Piece, color: Color) {
-        let piece_index = self.get_piece_index(piece, color);
-        clear_bit(&mut self.pieces[piece_index], to.to_index());
-        set_bit(&mut self.pieces[piece_index], from.to_index());
-
-        self.update_occupancy();
-        self.side_to_move = self.side_to_move.opponent();
-        if color == Color::Black {
-            self.fullmove_number -= 1;
-        }
-    }
-
-    #[inline(always)]
-    pub fn do_null_move(&mut self) {
-        self.side_to_move = self.side_to_move.opponent();
-    }
-
-    #[inline(always)]
-    pub fn undo_null_move(&mut self) {
-        self.side_to_move = self.side_to_move.opponent();
-    }
-
     #[inline(always)]
     pub fn get_piece_index(&self, piece: Piece, color: Color) -> usize {
         match color {
@@ -182,21 +120,7 @@ impl Board {
             self.occupancy[1] |= self.pieces[i + 6];   // Black pieces
         }
     }
-
-    pub fn generate_legal_moves(&self, color: Color) -> Vec<(Square, Square)> {
-        let moves = Vec::new();
-        for piece in 0..6 {
-            let piece_bb = self.pieces[self.get_piece_index(Piece::from_u8(piece as u8).expect("Invalid piece index"), color)];
-            let mut bb = piece_bb;
-            while bb != 0 {
-                let from_square = Square::from_index(get_lsb(bb));
-                // Generate moves for this piece from this square
-                // (Implement specific move generation logic here, ex: pawn moves, knight moves...)
-                clear_bit(&mut bb, from_square.to_index());
-            }
-        }
-        moves
-    }
+    
 
     pub fn get_piece_at_square(&self, square: Square) -> Option<(Piece, Color)> {
         let index = square.to_index();
@@ -237,16 +161,6 @@ impl Board {
         count_bits(self.pieces[piece_index]) as usize
     }
     
-     /// Returns the square where the king of the given color is located.
-    #[inline(always)]
-    pub fn king_square(&self, color: Color) -> Square {
-        let king_index = self.get_piece_index(Piece::King, color);
-        let king_bb = self.pieces[king_index];
-        debug_assert!(king_bb != 0, "King must exist on the board.");
-        Square::from_index(get_lsb(king_bb))
-    }
-
-    
     /// Returns a bitboard representing the pawns that form a shield in front of the given king.
     #[inline(always)]
     pub fn pawn_shield(&self, color: Color, king_square: Square) -> Bitboard {
@@ -266,185 +180,6 @@ impl Board {
         self.pieces[self.get_piece_index(Piece::Pawn, color)]
     }
     
-    #[inline(always)]
-    pub fn piece_squares(&self, piece: Piece, color: Color) -> Vec<Square> {
-        let mut squares = Vec::new();
-        let mut bitboard = self.pieces[self.get_piece_index(piece, color)];
-
-        while bitboard != 0 {
-            let square_index = get_lsb(bitboard);
-            squares.push(Square::from_index(square_index));
-            clear_bit(&mut bitboard, square_index);
-        }
-
-        squares
-    }
-
-     /// Determines if the game is in the endgame phase based on the remaining material.
-    pub fn is_endgame(&self) -> bool {
-        // Simple heuristic: if both sides have no queens or very few pieces, it's an endgame
-        let white_major_pieces = self.piece_count(Piece::Queen, Color::White)
-            + self.piece_count(Piece::Rook, Color::White);
-        let black_major_pieces = self.piece_count(Piece::Queen, Color::Black)
-            + self.piece_count(Piece::Rook, Color::Black);
-
-        let total_minor_pieces = self.piece_count(Piece::Bishop, Color::White)
-            + self.piece_count(Piece::Knight, Color::White)
-            + self.piece_count(Piece::Bishop, Color::Black)
-            + self.piece_count(Piece::Knight, Color::Black);
-
-        // A very basic condition: if there are very few major pieces and no queens, it's an endgame
-        white_major_pieces == 0 && black_major_pieces == 0 && total_minor_pieces <= 4
-    }
-
-    /// Generates all legal capture moves for the given color.
-    pub fn generate_captures(&self, color: Color) -> Vec<(Square, Square)> {
-        let mut captures = Vec::new();
-
-        for piece in [Piece::Pawn, Piece::Knight, Piece::Bishop, Piece::Rook, Piece::Queen, Piece::King].iter() {
-            let piece_bitboard = self.pieces[self.get_piece_index(*piece, color)];
-
-            let mut piece_positions = piece_bitboard;
-            while piece_positions != 0 {
-                let from_square_index = get_lsb(piece_positions);
-                let from_square = Square::from_index(from_square_index);
-
-                // Generate all potential moves for this piece
-                let possible_moves = self.generate_piece_moves(*piece, from_square, color);
-
-                for to_square in possible_moves {
-                    if self.is_capture(to_square, color) {
-                        captures.push((from_square, to_square));
-                    }
-                }
-
-                clear_bit(&mut piece_positions, from_square_index);
-            }
-        }
-
-        captures
-    }
-
-    #[inline(always)]
-    pub fn is_capture(&self, to_square: Square, color: Color) -> bool {
-        let opponent_color = color.opponent();
-        let opponent_pieces = self.occupancy[opponent_color as usize];
-        is_bit_set(opponent_pieces, to_square.to_index())
-    }
-
-     /// Generates all pseudo-legal moves for a specific piece from a given square.
-    pub fn generate_piece_moves(&self, piece: Piece, from_square: Square, color: Color) -> Vec<Square> {
-        let mut moves = Vec::new();
-
-        match piece {
-            Piece::Pawn => self.generate_pawn_moves(from_square, color, &mut moves),
-            Piece::Knight => self.generate_knight_moves(from_square, color, &mut moves),
-            Piece::Bishop => self.generate_bishop_moves(from_square, color, &mut moves),
-            Piece::Rook => self.generate_rook_moves(from_square, color, &mut moves),
-            Piece::Queen => self.generate_queen_moves(from_square, color, &mut moves),
-            Piece::King => self.generate_king_moves(from_square, color, &mut moves),
-        }
-
-        moves
-    }
-
-    #[inline(always)]
-    pub fn generate_pawn_moves(&self, from_square: Square, color: Color, moves: &mut Vec<Square>) {
-        // Implementation for pawn moves (both quiet moves and captures)
-        let from_index = from_square.to_index();
-        let direction = if color == Color::White { 8 } else { -8 };
-        let target_square = Square::from_index((from_index as isize + direction) as usize);
-
-        // Add the move if the target square is empty
-        if !self.is_occupied(target_square) {
-            moves.push(target_square);
-
-            // Handle double move from the starting position
-            if (color == Color::White && from_square.rank() == 1) ||
-               (color == Color::Black && from_square.rank() == 6) {
-                let double_target = Square::from_index((from_index as isize + 2 * direction) as usize);
-                if !self.is_occupied(double_target) {
-                    moves.push(double_target);
-                }
-            }
-        }
-
-        // Handle captures
-        for &offset in &[-1, 1] {
-            let capture_square = Square::from_index((from_index as isize + direction + offset) as usize);
-            if self.is_occupied_by_opponent(capture_square, color) {
-                moves.push(capture_square);
-            }
-        }
-    }
-
-    #[inline(always)]
-    pub fn generate_knight_moves(&self, from_square: Square, color: Color, moves: &mut Vec<Square>) {
-        // Implementation for knight moves
-        let from_index = from_square.to_index();
-        let knight_moves = [15, 17, 10, 6, -15, -17, -10, -6];
-
-        for &offset in &knight_moves {
-            let to_square = Square::from_index((from_index as isize + offset) as usize);
-            if !self.is_occupied_by_friendly(to_square, color) {
-                moves.push(to_square);
-            }
-        }
-    }
-
-    #[inline(always)]
-    pub fn generate_bishop_moves(&self, from_square: Square, color: Color, moves: &mut Vec<Square>) {
-        // Implementation for bishop moves (diagonals)
-        let bishop_moves = self.get_bishop_attacks(from_square.to_index(), self.occupancy());
-        self.add_sliding_piece_moves(bishop_moves, color, moves);
-    }
-
-    #[inline(always)]
-    pub fn generate_rook_moves(&self, from_square: Square, color: Color, moves: &mut Vec<Square>) {
-        // Implementation for rook moves (ranks and files)
-        let rook_moves = self.get_rook_attacks(from_square.to_index(), self.occupancy());
-        self.add_sliding_piece_moves(rook_moves, color, moves);
-    }
-
-    #[inline(always)]
-    pub fn generate_queen_moves(&self, from_square: Square, color: Color, moves: &mut Vec<Square>) {
-        // Implementation for queen moves (combines rook and bishop moves)
-        let queen_moves = self.get_bishop_attacks(from_square.to_index(), self.occupancy())
-                         | self.get_rook_attacks(from_square.to_index(), self.occupancy());
-        self.add_sliding_piece_moves(queen_moves, color, moves);
-    }
-
-    #[inline(always)]
-    pub fn occupancy(&self) -> Bitboard {
-        self.occupancy[0] | self.occupancy[1]
-    }
-
-    #[inline(always)]
-    pub fn generate_king_moves(&self, from_square: Square, color: Color, moves: &mut Vec<Square>) {
-        // Implementation for king moves (one square in any direction)
-        let from_index = from_square.to_index();
-        let king_moves = [1, -1, 8, -8, 9, -9, 7, -7];
-
-        for &offset in &king_moves {
-            let to_square = Square::from_index((from_index as isize + offset) as usize);
-            if !self.is_occupied_by_friendly(to_square, color) {
-                moves.push(to_square);
-            }
-        }
-    }
-
-    #[inline(always)]
-    pub fn add_sliding_piece_moves(&self, attacks: Bitboard, color: Color, moves: &mut Vec<Square>) {
-        let mut attack_bitboard = attacks;
-        while attack_bitboard != 0 {
-            let to_square_index = get_lsb(attack_bitboard);
-            let to_square = Square::from_index(to_square_index);
-            if !self.is_occupied_by_friendly(to_square, color) {
-                moves.push(to_square);
-            }
-            clear_bit(&mut attack_bitboard, to_square_index);
-        }
-    }
 
     #[inline(always)]
     pub fn is_occupied(&self, square: Square) -> bool {
@@ -517,7 +252,7 @@ impl Board {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Square, Piece, Color};
+    use crate::{Color, Piece, Square};
 
     #[test]
     fn test_make_and_unmake_move() {

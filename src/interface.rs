@@ -5,7 +5,7 @@ use std::io::{self, Write};
 pub fn run_interactive() {
     let mut engine = Arbiter::new();
     let mut board = Board::new();
-    let color = Color::White;  // Assume the player is white for simplicity
+    // Assume the player is white for simplicity
 
     loop {
         print!("Enter your move (e.g., e2e4): ");

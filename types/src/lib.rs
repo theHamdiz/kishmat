@@ -4,6 +4,11 @@ pub mod bitboard;
 pub mod board;
 pub mod zobrist;
 pub mod game_state;
+mod fen;
+mod pgn;
+mod move_gen;
+mod captures;
+mod position;
 
 pub use square::Square;
 pub use piece::{Color, Piece};
