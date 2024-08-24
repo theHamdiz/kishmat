@@ -9,6 +9,12 @@ pub struct Zobrist {
     pub(crate) side_to_move_key: u64,            // Side to move
 }
 
+impl Default for Zobrist {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Zobrist {
     pub fn new() -> Self {
         let mut rng = StdRng::seed_from_u64(0); // Use a fixed seed for reproducibility

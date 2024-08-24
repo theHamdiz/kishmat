@@ -58,13 +58,13 @@ impl Search{
         (best_score, best_move)
     }
 
-fn evaluate_terminal(board: &Board, color: Color) -> i32 {
-     if GameState::is_checkmate(board, color) {
-        return -9999; // Negative high value for checkmate
-    } else if GameState::is_stalemate(board, color) {
-        return 0; // Stalemate results in a draw
-    }
-    0
-}
+    // fn evaluate_terminal(board: &Board, color: Color) -> i32 {
+    //      if GameState::is_checkmate(board, color) {
+    //         return -9999; // Negative high value for checkmate
+    //     } else if GameState::is_stalemate(board, color) {
+    //         return 0; // Stalemate results in a draw
+    //     }
+    //     0
+    // }
 
 }

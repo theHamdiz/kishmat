@@ -6,6 +6,5 @@ pub mod transposition;
 pub mod null_move;
 pub mod lmr;
 pub mod search;
-mod positional;
 
 pub use search::Search;

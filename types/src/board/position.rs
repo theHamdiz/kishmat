@@ -25,7 +25,7 @@ impl Board{
         complexity_score > COMPLEXITY_THRESHOLD
     }
     
-         /// Returns the square where the king of the given color is located.
+    /// Returns the square where the king of the given color is located.
     #[inline(always)]
     pub fn king_square(&self, color: Color) -> Square {
         let king_index = self.get_piece_index(Piece::King, color);
@@ -65,9 +65,16 @@ impl Board{
         white_major_pieces == 0 && black_major_pieces == 0 && total_minor_pieces <= 4
     }
 
-    
     #[inline(always)]
     pub fn occupancy(&self) -> Bitboard {
         self.occupancy[0] | self.occupancy[1]
+    }
+    
+    #[inline(always)]
+    pub(crate) fn is_en_passant_target(&self, square: Square) -> bool {
+        if let Some(ep_square) = self.en_passant {
+            return ep_square == square;
+        }
+        false
     }
 }

@@ -6,3 +6,4 @@ eval/target/*
 search/target/*
 types/target/*
 tests/target/*
+ui/node_modules/*

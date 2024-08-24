@@ -3,7 +3,7 @@
 mod commands;
 mod interface;
 
-use clap::{Arg, Command, Subcommand};
+use clap::{Arg, Command};
 use interface::run_interactive;
 use commands::{run_analyze, run_play};
 

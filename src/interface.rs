@@ -1,5 +1,5 @@
 use arbiter::Arbiter;
-use types::{Board, Square, Color};
+use types::{Board, Square};
 use std::io::{self, Write};
 
 pub fn run_interactive() {

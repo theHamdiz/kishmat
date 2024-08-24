@@ -134,7 +134,7 @@ impl Evaluation {
 
     #[inline(always)]
     fn is_passed(board: &Board, color: Color, square: Square) -> bool {
-        let rank = square.rank();
+        let rank = square.rank_usize();
         let file = square.to_index() % 8;
         let pawns = board.pawns(color.opponent());
 

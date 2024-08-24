@@ -8,8 +8,6 @@ pub mod evaluation;
 pub use evaluation::Evaluation;
 
 
-
-
 impl Evaluation {
     pub fn new() -> Self {
       Self::default()

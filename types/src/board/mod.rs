@@ -1,5 +1,14 @@
-use crate::zobrist::Zobrist;
-use crate::{clear_bit, count_bits, get_lsb, is_bit_set, Bitboard, Color, Piece, Square};
+use zobrist::Zobrist;
+use crate::{clear_bit, count_bits, get_lsb, is_bit_set, set_bit, Bitboard, Color, Piece, Square};
+
+mod captures;
+mod fen;
+pub mod game_state;
+mod move_gen;
+mod pgn;
+mod position;
+pub mod zobrist;
+mod validation;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Board {
@@ -12,7 +21,7 @@ pub struct Board {
     rook_magics: [u64; 64],
     rook_shifts: [u8; 64],
     rook_attack_tables: Vec<Vec<Bitboard>>,
-    
+
     pub(crate) pieces: [Bitboard; 12], // 6 pieces for each color
     pub(crate) occupancy: [Bitboard; 2], // Occupancy for each color
     pub side_to_move: Color,
@@ -24,17 +33,17 @@ pub struct Board {
 
 impl Default for Board {
     fn default() -> Self {
-        Self {
+        let mut board = Self {
             bishop_masks: [0; 64],
             bishop_magics: [0; 64],
             bishop_shifts: [0; 64],
             bishop_attack_tables: vec![vec![0; 512]; 64], // Size depends on magic bitboard setup
-
+        
             rook_masks: [0; 64],
             rook_magics: [0; 64],
             rook_shifts: [0; 64],
             rook_attack_tables: vec![vec![0; 4096]; 64], // Size depends on magic bitboard setup
-
+        
             pieces: [0; 12],
             occupancy: [0; 2],
             side_to_move: Color::White,
@@ -42,7 +51,10 @@ impl Default for Board {
             en_passant: None,
             halfmove_clock: 0,
             fullmove_number: 1,
-        }
+        };
+        
+        board.set_starting_position();
+        board
     }
 }
 
@@ -56,8 +68,8 @@ impl Board {
         const BISHOP_VALUE: i32 = 325;
         const ROOK_VALUE: i32 = 500;
         const QUEEN_VALUE: i32 = 900;
-         
-         const KING_VALUE: i32 = 1000_000;
+
+         // const KING_VALUE: i32 = 1_000_000;
 
         let mut material_score = 0;
 
@@ -77,6 +89,37 @@ impl Board {
 
         material_score
     }
+
+    fn set_starting_position(&mut self) {
+        // Initialize white pieces
+        self.pieces[self.get_piece_index(Piece::Rook, Color::White)] |= 1 << Square::A1.to_index();
+        self.pieces[self.get_piece_index(Piece::Rook, Color::White)] |= 1 << Square::H1.to_index();
+        self.pieces[self.get_piece_index(Piece::Knight, Color::White)] |= 1 << Square::B1.to_index();
+        self.pieces[self.get_piece_index(Piece::Knight, Color::White)] |= 1 << Square::G1.to_index();
+        self.pieces[self.get_piece_index(Piece::Bishop, Color::White)] |= 1 << Square::C1.to_index();
+        self.pieces[self.get_piece_index(Piece::Bishop, Color::White)] |= 1 << Square::F1.to_index();
+        self.pieces[self.get_piece_index(Piece::Queen, Color::White)] |= 1 << Square::D1.to_index();
+        self.pieces[self.get_piece_index(Piece::King, Color::White)] |= 1 << Square::E1.to_index();
+        for file in 0..8 {
+            self.pieces[self.get_piece_index(Piece::Pawn, Color::White)] |= 1 << Square::from_index(Square::A2.to_index() + file).to_index();
+        }
+
+        // Initialize black pieces
+        self.pieces[self.get_piece_index(Piece::Rook, Color::Black)] |= 1 << Square::A8.to_index();
+        self.pieces[self.get_piece_index(Piece::Rook, Color::Black)] |= 1 << Square::H8.to_index();
+        self.pieces[self.get_piece_index(Piece::Knight, Color::Black)] |= 1 << Square::B8.to_index();
+        self.pieces[self.get_piece_index(Piece::Knight, Color::Black)] |= 1 << Square::G8.to_index();
+        self.pieces[self.get_piece_index(Piece::Bishop, Color::Black)] |= 1 << Square::C8.to_index();
+        self.pieces[self.get_piece_index(Piece::Bishop, Color::Black)] |= 1 << Square::F8.to_index();
+        self.pieces[self.get_piece_index(Piece::Queen, Color::Black)] |= 1 << Square::D8.to_index();
+        self.pieces[self.get_piece_index(Piece::King, Color::Black)] |= 1 << Square::E8.to_index();
+        for file in 0..8 {
+            self.pieces[self.get_piece_index(Piece::Pawn, Color::Black)] |= 1 << Square::from_index(Square::A7.to_index() + file).to_index();
+        }
+
+        // Update the occupancy bitboards
+        self.update_occupancy();
+    }
     
     pub fn mobility(&self, color: Color) -> i32 {
         let mut mobility_score = 0;
@@ -89,7 +132,7 @@ impl Board {
 
         mobility_score
     }
-    
+
     pub(crate) fn total_piece_count(&self) -> i32 {
         // Count the total number of pieces for both sides
         let mut total_count = 0;
@@ -102,7 +145,7 @@ impl Board {
 
         total_count
     }
-    
+
     #[inline(always)]
     pub fn get_piece_index(&self, piece: Piece, color: Color) -> usize {
         match color {
@@ -120,7 +163,6 @@ impl Board {
             self.occupancy[1] |= self.pieces[i + 6];   // Black pieces
         }
     }
-    
 
     pub fn get_piece_at_square(&self, square: Square) -> Option<(Piece, Color)> {
         let index = square.to_index();
@@ -153,14 +195,14 @@ impl Board {
             _ => panic!("Invalid piece index"),
         }
     }
-    
+
     /// Counts the number of a specific piece type on the board for a given color.
     #[inline(always)]
     pub fn piece_count(&self, piece: Piece, color: Color) -> usize {
         let piece_index = self.get_piece_index(piece, color);
         count_bits(self.pieces[piece_index]) as usize
     }
-    
+
     /// Returns a bitboard representing the pawns that form a shield in front of the given king.
     #[inline(always)]
     pub fn pawn_shield(&self, color: Color, king_square: Square) -> Bitboard {
@@ -174,27 +216,10 @@ impl Board {
 
         self.pieces[self.get_piece_index(Piece::Pawn, color)] & shield_mask
     }
-    
+
     #[inline(always)]
     pub fn pawns(&self, color: Color) -> Bitboard {
         self.pieces[self.get_piece_index(Piece::Pawn, color)]
-    }
-    
-
-    #[inline(always)]
-    pub fn is_occupied(&self, square: Square) -> bool {
-        let all_pieces = self.occupancy[0] | self.occupancy[1];
-        is_bit_set(all_pieces, square.to_index())
-    }
-
-    #[inline(always)]
-    pub fn is_occupied_by_friendly(&self, square: Square, color: Color) -> bool {
-        is_bit_set(self.occupancy[color as usize], square.to_index())
-    }
-
-    #[inline(always)]
-    pub fn is_occupied_by_opponent(&self, square: Square, color: Color) -> bool {
-        is_bit_set(self.occupancy[color.opponent() as usize], square.to_index())
     }
 
     pub fn get_bishop_attacks(&self, square_index: usize, occupancy: Bitboard) -> Bitboard {
@@ -245,6 +270,108 @@ impl Board {
         }
 
         hash
+    }
+    
+     #[inline(always)]
+     fn is_valid_pawn_move(&self, from_square: Square, to_square: Square, color: Color) -> bool {
+            let from_index = from_square.to_index();
+            let to_index = to_square.to_index();
+            let direction = match color {
+                Color::White => 8, // White pawns move "up" the board
+                Color::Black => -8, // Black pawns move "down" the board
+            };
+
+            // Standard one-square forward move
+            if to_index == (from_index as isize + direction) as usize {
+                return !self.is_occupied(to_square); // Valid if the destination square is unoccupied
+            }
+
+            // Two-square initial move
+            let starting_rank = match color {
+                Color::White => 1, // Rank 2
+                Color::Black => 6, // Rank 7
+            };
+            if from_square.rank_usize() == starting_rank && to_index == (from_index as isize + 2 * direction) as usize {
+                let intermediate_square = Square::from_index((from_index as isize + direction) as usize);
+                return !self.is_occupied(intermediate_square) && !self.is_occupied(to_square); // Valid if both squares are unoccupied
+            }
+
+            // Diagonal capture
+            let capture_directions = match color {
+                Color::White => [7, 9], // White captures to the left (7) and right (9)
+                Color::Black => [-7, -9], // Black captures to the left (-7) and right (-9)
+            };
+            if capture_directions.contains(&(to_index as isize - from_index as isize)) {
+                return self.is_occupied_by_opponent(to_square, color) || self.is_en_passant_target(to_square);
+            }
+
+            false
+        }
+    
+    #[inline(always)]
+    fn promote_pawn(&mut self, square: Square, piece: Piece, color: Color) {
+        // Clear the pawn from the square
+        let pawn_index = self.get_piece_index(Piece::Pawn, color);
+        clear_bit(&mut self.pieces[pawn_index], square.to_index());
+
+        // Set the promoted piece on the square
+        let promoted_index = self.get_piece_index(piece, color);
+        set_bit(&mut self.pieces[promoted_index], square.to_index());
+
+        // Update occupancy bitboards
+        self.update_occupancy();
+    }
+
+   #[inline(always)]
+    fn castle_kingside(&mut self) -> &Self {
+        let (king_from, king_to, rook_from, rook_to) = match self.side_to_move {
+            Color::White => (Square::E1, Square::G1, Square::H1, Square::F1),
+            Color::Black => (Square::E8, Square::G8, Square::H8, Square::F8),
+        };
+
+        // Move the king
+        self.move_piece(king_from, king_to, Piece::King);
+
+        // Move the rook
+        self.move_piece(rook_from, rook_to, Piece::Rook);
+
+        // Update castling rights (reset them)
+        self.castling_rights &= !0b0011; // Remove kingside castling rights
+
+        // Switch sides
+        self.side_to_move = self.side_to_move.opponent();
+
+        self
+    }
+
+   #[inline(always)]
+    fn castle_queenside(&mut self) -> &Self {
+        let (king_from, king_to, rook_from, rook_to) = match self.side_to_move {
+            Color::White => (Square::E1, Square::C1, Square::A1, Square::D1),
+            Color::Black => (Square::E8, Square::C8, Square::A8, Square::D8),
+        };
+
+        // Move the king
+        self.move_piece(king_from, king_to, Piece::King);
+
+        // Move the rook
+        self.move_piece(rook_from, rook_to, Piece::Rook);
+
+        // Update castling rights (reset them)
+        self.castling_rights &= !0b1100; // Remove queenside castling rights
+
+        // Switch sides
+        self.side_to_move = self.side_to_move.opponent();
+
+        self
+    }
+
+    #[inline(always)]
+    fn move_piece(&mut self, from: Square, to: Square, piece: Piece) {
+        let piece_index = self.get_piece_index(piece, self.side_to_move);
+        clear_bit(&mut self.pieces[piece_index], from.to_index());
+        set_bit(&mut self.pieces[piece_index], to.to_index());
+        self.update_occupancy();
     }
 }
 
@@ -317,7 +444,7 @@ mod tests {
     fn test_generate_legal_moves() {
         let board = Board::new();
         let moves = board.generate_legal_moves(Color::White);
-        
+
         // Here you would add assertions based on the expected legal moves in the starting position.
         // This is simplified since the actual move generation logic isn't fully implemented.
         assert!(moves.is_empty()); // Assuming no logic is added yet.
@@ -332,7 +459,7 @@ mod tests {
         assert_eq!(board.get_piece_index(Piece::Queen, Color::White), 4);
         assert_eq!(board.get_piece_index(Piece::King, Color::Black), 11);
     }
-    
+
     #[test]
     fn test_piece_count_initial_position() {
         let board = Board::new();
@@ -397,23 +524,23 @@ mod tests {
             assert_eq!(board.piece_count(piece, Color::Black), 0);
         }
     }
-    
+
     #[test]
     fn test_pawn_shield() {
         let board = Board::new();
-    
+
         // Test the initial pawn shield in front of the White king
         let king_square = board.king_square(Color::White);
         let shield = board.pawn_shield(Color::White, king_square);
         let expected_shield = (1 << Square::F2.to_index()) | (1 << Square::E2.to_index()) | (1 << Square::D2.to_index());
         assert_eq!(shield, expected_shield);
-    
+
         // Test the initial pawn shield in front of the Black king
         let king_square = board.king_square(Color::Black);
         let shield = board.pawn_shield(Color::Black, king_square);
         let expected_shield = (1 << Square::F7.to_index()) | (1 << Square::E7.to_index()) | (1 << Square::D7.to_index());
         assert_eq!(shield, expected_shield);
-        
+
         // Move the White king to G1 and a pawn to G2, then check the shield
         let mut board = Board::new();
         board.make_move(Square::E1, Square::G1, Piece::King, Color::White);
@@ -426,10 +553,10 @@ mod tests {
     #[test]
     fn test_king_square() {
         let board = Board::new();
-    
+
         assert_eq!(board.king_square(Color::White), Square::E1);
         assert_eq!(board.king_square(Color::Black), Square::E8);
-        
+
         // Move the white king to D2
         let mut board = Board::new();
         board.make_move(Square::E1, Square::D2, Piece::King, Color::White);
@@ -439,11 +566,11 @@ mod tests {
     #[test]
     fn test_pawns_initial_position() {
         let board = Board::new();
-        
+
         // White pawns in the initial position (row 2)
         let expected_white_pawns = 0x0000_0000_0000_FF00;
         assert_eq!(board.pawns(Color::White), expected_white_pawns);
-        
+
         // Black pawns in the initial position (row 7)
         let expected_black_pawns = 0x00FF_0000_0000_0000;
         assert_eq!(board.pawns(Color::Black), expected_black_pawns);
@@ -452,12 +579,12 @@ mod tests {
     #[test]
     fn test_pawns_after_move() {
         let mut board = Board::new();
-        
+
         // Move white pawn from E2 to E4
         board.make_move(Square::E2, Square::E4, Piece::Pawn, Color::White);
         let expected_white_pawns = 0x0000_0000_0000_DF00 | 0x0000_0000_0010_0000;
         assert_eq!(board.pawns(Color::White), expected_white_pawns);
-        
+
         // Move black pawn from E7 to E5
         board.make_move(Square::E7, Square::E5, Piece::Pawn, Color::Black);
         let expected_black_pawns = 0x00EF_0000_0000_0000 | 0x0000_1000_0000_0000;
@@ -475,7 +602,7 @@ mod tests {
         assert_eq!(board.pawns(Color::White), 0);
         assert_eq!(board.pawns(Color::Black), 0);
     }
-    
+
     #[test]
     fn test_piece_squares_initial_position() {
         let board = Board::new();
