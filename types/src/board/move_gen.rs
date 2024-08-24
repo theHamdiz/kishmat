@@ -115,15 +115,18 @@ impl Board{
         }
     }
 
-    #[inline(always)]
+     #[inline(always)]
     pub fn generate_knight_moves(&self, from_square: Square, color: Color, moves: &mut Vec<(Square, Square)>) {
         let from_index = from_square.to_index();
         let knight_moves = [15, 17, 10, 6, -15, -17, -10, -6];
 
         for &offset in &knight_moves {
-            let to_square = Square::from_index((from_index as isize + offset) as usize);
-            if !self.is_occupied_by_friendly(to_square, color) {
-                moves.push((from_square, to_square));
+            let to_index = from_index as isize + offset;
+            if to_index >= 0 && to_index < 64 { // Ensure the index is within bounds
+                let to_square = Square::from_index(to_index as usize);
+                if !self.is_occupied_by_friendly(to_square, color) {
+                    moves.push((from_square, to_square));
+                }
             }
         }
     }
@@ -153,9 +156,22 @@ impl Board{
         let king_moves = [1, -1, 8, -8, 9, -9, 7, -7];
 
         for &offset in &king_moves {
-            let to_square = Square::from_index((from_index as isize + offset) as usize);
-            if !self.is_occupied_by_friendly(to_square, color) {
-                moves.push((from_square, to_square));
+            let to_index = from_index as isize + offset;
+
+            // Ensure the index is within bounds and that it doesn't wrap around rows
+            if to_index >= 0 && to_index < 64 {
+                let to_square = Square::from_index(to_index as usize);
+
+                // Check for row wrapping: Ensure that moves don't wrap horizontally across the board
+                let from_file = from_square.file();
+                let to_file = to_square.file();
+                if (offset.abs() == 1 || offset.abs() == 9 || offset.abs() == 7) && from_file != to_file {
+                    continue; // Skip move if it wraps around the edge of the board
+                }
+
+                if !self.is_occupied_by_friendly(to_square, color) {
+                    moves.push((from_square, to_square));
+                }
             }
         }
     }

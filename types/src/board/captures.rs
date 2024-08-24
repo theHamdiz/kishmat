@@ -17,9 +17,9 @@ impl Board{
                 // Generate all potential moves for this piece
                 let possible_moves = self.generate_piece_moves(*piece, from_square, color);
 
-                for pieceMove in possible_moves {
-                    if self.is_capture(pieceMove.0, color) {
-                        captures.push((from_square, pieceMove.0));
+                for piece_move in possible_moves {
+                    if self.is_capture(piece_move.0, color) {
+                        captures.push((from_square, piece_move.0));
                     }
                 }
 
