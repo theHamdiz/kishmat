@@ -1,20 +1,88 @@
 use arbiter::Arbiter;
 use types::Board;
 
+use std::str::FromStr;
+
+// Assuming these are defined in your codebase
+type Square = String; // Replace with your actual Square type
+type Move = (Square, Square); // Replace with your actual Move type
+
 pub fn run_play(depth: u32) {
     let mut engine = Arbiter::new();
     let mut board = Board::new();
-    let color = types::Color::White;  // Assume the player is white for simplicity
+    let player_color = types::Color::White;
+    let engine_color = types::Color::Black;
 
-    // Example loop to play the game
     loop {
-        let best_move = engine.search_best_move(&mut board, depth as i32, color);
+        // Engine's move
+        let best_move = engine.search_best_move(&mut board, depth as i32, engine_color);
+        board.apply_move(best_move);
         println!("Engine move: {:?} -> {:?}", best_move.0, best_move.1);
 
-        // Here, you'd add the logic to handle the user's move and update the board
-        // For simplicity, we end after one move
-        break;
+        // Check for game over (you might need to implement this logic based on your game)
+        if board.is_game_over() {
+            println!("Game over! The engine wins.");
+            break;
+        }
+
+        // Display the current board state
+        println!("{:?}", board);
+
+        // User's move
+        let mut user_input = String::new();
+        println!("Your move (e.g., e2e4): ");
+        io::stdout().flush().expect("Failed to flush stdout");
+
+        io::stdin().read_line(&mut user_input).expect("Failed to read line");
+
+        let user_move = parse_move(&user_input, player_color);
+        match user_move {
+            Some(mv) => {
+                if board.is_legal_move(mv) {
+                    board.apply_move(mv);
+                } else {
+                    println!("Illegal move! Please try again.");
+                    continue;
+                }
+            }
+            None => {
+                println!("Invalid input! Please try again.");
+                continue;
+            }
+        }
+
+        // Check for game over
+        if board.is_game_over() {
+            println!("Game over! You win.");
+            break;
+        }
+
+        // Display the current board state
+        println!("{:?}", board);
     }
+}
+
+fn parse_move(input: &str, color: types::Color) -> Option<Move> {
+    // Normalize the input: remove all non-alphanumeric characters
+    let normalized_input: String = input
+        .chars()
+        .filter(|c| c.is_alphanumeric())
+        .collect();
+
+    // Ensure the normalized input has exactly 4 characters (e.g., "g3g4")
+    if normalized_input.len() != 4 {
+        return None;
+    }
+
+    // Extract the source and destination squares
+    let (source, destination) = normalized_input.split_at(2);
+
+    // Convert source and destination into Squares (replace String with your Square type)
+    let source_square = Square::from_str(source).ok()?;
+    let destination_square = Square::from_str(destination).ok()?;
+
+    // Return the move as a tuple (source_square, destination_square)
+    Some((source_square, destination_square))
 }
 
 pub fn run_analyze(fen: &str, depth: u32) {

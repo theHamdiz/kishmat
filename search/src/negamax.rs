@@ -43,7 +43,7 @@ impl Search{
 
     // Handle potential overflow for alpha and beta when negating
     let mut neg_alpha = if alpha == i32::MIN { i32::MAX } else { -alpha };
-    let mut neg_beta = if beta == i32::MIN { i32::MAX } else { -beta };
+    let neg_beta = if beta == i32::MIN { i32::MAX } else { -beta };
 
     for m in legal_moves {
         let piece = board.get_piece_at_square(m.0).expect("No piece found at source square").0;
