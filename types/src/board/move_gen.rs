@@ -2,7 +2,7 @@ use crate::board::Board;
 use crate::{clear_bit, get_lsb, set_bit, Bitboard, Color, Piece, Square};
 
 impl Board{
-        #[inline(always)]
+    #[inline(always)]
     pub fn make_move(&mut self, from: Square, to: Square, piece: Piece, color: Color) {
         let piece_index = self.get_piece_index(piece, color);
         clear_bit(&mut self.pieces[piece_index], from.to_index());
@@ -186,6 +186,106 @@ impl Board{
                 moves.push((from_square, to_square));
             }
             clear_bit(&mut attack_bitboard, to_square_index);
+        }
+    }
+    
+    #[inline(always)]
+    pub fn apply_move(&mut self, mv: (Square, Square), color: Color) {
+        let (from_square, to_square) = mv;
+
+        // Get the piece at the starting square
+        if let Some((piece, _)) = self.get_piece_at_square(from_square) {
+            // Handle special cases: Castling, En Passant, Promotion
+            if piece == Piece::King {
+                // Handle castling
+                if from_square == Square::E1 && to_square == Square::G1 && color == Color::White {
+                    self.castle_kingside();
+                    return;
+                } else if from_square == Square::E1 && to_square == Square::C1 && color == Color::White {
+                    self.castle_queenside();
+                    return;
+                } else if from_square == Square::E8 && to_square == Square::G8 && color == Color::Black {
+                    self.castle_kingside();
+                    return;
+                } else if from_square == Square::E8 && to_square == Square::C8 && color == Color::Black {
+                    self.castle_queenside();
+                    return;
+                }
+            }
+
+            if piece == Piece::Pawn {
+                // Handle en passant
+                if let Some(ep_square) = self.en_passant {
+                    if to_square == ep_square {
+                        let capture_square = Square::from_index((from_square.to_index() as isize + (if color == Color::White { -8 } else { 8 })) as usize);
+                        self.capture_piece(capture_square);
+                    }
+                }
+
+                // Handle promotion
+                if (color == Color::White && to_square.rank() == 7) || (color == Color::Black && to_square.rank() == 0) {
+                    // Assuming a promotion to Queen by default
+                    self.promote_pawn(to_square, Piece::Queen, color);
+                    self.side_to_move = color.opponent();
+                    return;
+                }
+            }
+
+            // Regular move: Update piece positions and handle capture
+            if self.is_occupied(to_square) {
+                self.capture_piece(to_square);
+            }
+            self.make_move(from_square, to_square, piece, color);
+
+            // Update en passant square if applicable
+            if piece == Piece::Pawn && (to_square.to_index() as isize - from_square.to_index() as isize).abs() == 16 {
+                self.en_passant = Some(Square::from_index((from_square.to_index() + to_square.to_index()) / 2));
+            } else {
+                self.en_passant = None;
+            }
+
+            // Update castling rights if necessary
+            self.update_castling_rights(from_square, to_square, piece, color);
+
+            // Switch sides
+            self.side_to_move = color.opponent();
+        }
+    }
+
+    #[inline(always)]
+    fn update_castling_rights(&mut self, from_square: Square, to_square: Square, piece: Piece, color: Color) {
+        // Update castling rights if a rook or king moves
+        if piece == Piece::King {
+            if color == Color::White {
+                self.castling_rights &= !0b11; // White king moves, lose both castling rights
+            } else {
+                self.castling_rights &= !0b1100; // Black king moves, lose both castling rights
+            }
+        } else if piece == Piece::Rook {
+            if color == Color::White {
+                if from_square == Square::A1 {
+                    self.castling_rights &= !0b01; // Lose White queenside castling right
+                } else if from_square == Square::H1 {
+                    self.castling_rights &= !0b10; // Lose White kingside castling right
+                }
+            } else if from_square == Square::A8 {
+                self.castling_rights &= !0b0100; // Lose Black queenside castling right
+            } else if from_square == Square::H8 {
+                self.castling_rights &= !0b1000; // Lose Black kingside castling right
+            }
+        }
+
+        // Handle rook capture that impacts castling rights
+        if self.is_occupied(to_square) && self.get_piece_at_square(to_square).unwrap().0 == Piece::Rook {
+            if to_square == Square::A1 {
+                self.castling_rights &= !0b01; // Capturing White queenside rook
+            } else if to_square == Square::H1 {
+                self.castling_rights &= !0b10; // Capturing White kingside rook
+            } else if to_square == Square::A8 {
+                self.castling_rights &= !0b0100; // Capturing Black queenside rook
+            } else if to_square == Square::H8 {
+                self.castling_rights &= !0b1000; // Capturing Black kingside rook
+            }
         }
     }
 }

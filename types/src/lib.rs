@@ -2,9 +2,10 @@ pub mod square;
 pub mod piece;
 pub mod bitboard;
 pub mod board;
-
+pub mod chess_move;
 
 pub use square::Square;
+pub use chess_move::ChessMove;
 pub use piece::{Color, Piece};
 pub use bitboard::{clear_bit, count_bits, get_lsb, is_bit_set, set_bit, Bitboard, FULL_BOARD};
 pub use board::Board;

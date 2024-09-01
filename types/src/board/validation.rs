@@ -1,4 +1,4 @@
-use crate::{is_bit_set, Board, Color, Piece, Square};
+use crate::{is_bit_set, Board, Color, GameState, Piece, Square};
 
 impl Board{
     #[inline(always)]
@@ -20,6 +20,35 @@ impl Board{
             Piece::Queen => self.is_valid_queen_move(from_square, to_square),
             Piece::King => self.is_valid_king_move(from_square, to_square),
         }
+    }
+    
+    #[inline(always)]
+    pub fn is_legal_move(&self, mv: (Square, Square), color: Color) -> bool {
+        let (from_square, to_square) = mv;
+
+        // Get the piece at the starting square
+        if let Some((piece, piece_color)) = self.get_piece_at_square(from_square) {
+            // Ensure the piece belongs to the current player
+            if piece_color != color {
+                return false;
+            }
+
+            // Generate all pseudo-legal moves for this piece
+            let possible_moves = self.generate_piece_moves(piece, from_square, color);
+
+            // Check if the move is in the list of possible moves
+            if possible_moves.contains(&(from_square, to_square)) {
+                // Make the move temporarily
+                let mut board_clone = self.clone();
+                board_clone.make_move(from_square, to_square, piece, color);
+
+                // Ensure the move does not leave the king in check
+                return !GameState::is_in_check(&board_clone, color);
+            }
+        }
+
+        // If no piece is found or the move is not valid, return false
+        false
     }
     
     #[inline(always)]

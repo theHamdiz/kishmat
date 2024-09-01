@@ -1,11 +1,10 @@
+use std::io;
+use std::io::Write;
 use arbiter::Arbiter;
-use types::Board;
+use types::{Board, GameState, Square, ChessMove};
 
 use std::str::FromStr;
 
-// Assuming these are defined in your codebase
-type Square = String; // Replace with your actual Square type
-type Move = (Square, Square); // Replace with your actual Move type
 
 pub fn run_play(depth: u32) {
     let mut engine = Arbiter::new();
@@ -16,11 +15,11 @@ pub fn run_play(depth: u32) {
     loop {
         // Engine's move
         let best_move = engine.search_best_move(&mut board, depth as i32, engine_color);
-        board.apply_move(best_move);
+        board.apply_move(best_move, player_color);
         println!("Engine move: {:?} -> {:?}", best_move.0, best_move.1);
 
         // Check for game over (you might need to implement this logic based on your game)
-        if board.is_game_over() {
+        if GameState::is_game_over(&board, player_color) {
             println!("Game over! The engine wins.");
             break;
         }
@@ -38,8 +37,8 @@ pub fn run_play(depth: u32) {
         let user_move = parse_move(&user_input, player_color);
         match user_move {
             Some(mv) => {
-                if board.is_legal_move(mv) {
-                    board.apply_move(mv);
+                if board.is_legal_move(mv, player_color) {
+                    board.apply_move(mv.clone(), player_color);
                 } else {
                     println!("Illegal move! Please try again.");
                     continue;
@@ -52,7 +51,7 @@ pub fn run_play(depth: u32) {
         }
 
         // Check for game over
-        if board.is_game_over() {
+        if GameState::is_game_over(&board, player_color) {
             println!("Game over! You win.");
             break;
         }
@@ -62,7 +61,7 @@ pub fn run_play(depth: u32) {
     }
 }
 
-fn parse_move(input: &str, color: types::Color) -> Option<Move> {
+fn parse_move(input: &str, color: types::Color) -> Option<ChessMove> {
     // Normalize the input: remove all non-alphanumeric characters
     let normalized_input: String = input
         .chars()

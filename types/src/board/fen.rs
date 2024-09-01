@@ -14,7 +14,7 @@ impl Board{
                 let mut file = 0;
                 for ch in row.chars() {
                     match ch {
-                        '1'..='8' => file += ch.to_digit(10).unwrap() as usize,
+                        '1'..='8' => file += ch.to_digit(10)? as usize,
                         'r' => board.set_piece(Square::new(rank, file), Piece::Rook, Color::Black),
                         'n' => board.set_piece(Square::new(rank, file), Piece::Knight, Color::Black),
                         'b' => board.set_piece(Square::new(rank, file), Piece::Bishop, Color::Black),
