@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use crate::board::Board;
 use crate::{set_bit, Color, Piece, Square};
 
@@ -45,7 +46,7 @@ impl Board{
 
         // 4. En passant target square
         board.en_passant = if parts[3] != "-" {
-            Some(Square::from_str(parts[3]))
+            Some(Square::from_str(parts[3]).unwrap())
         } else {
             None
         };

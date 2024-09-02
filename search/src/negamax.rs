@@ -3,8 +3,8 @@ use crate::transposition::TranspositionTable;
 use types::{Board, Color, GameState, Square};
 use crate::Search;
 
-impl Search{
- /// This function returns the best move for the given board and color by performing a search.
+impl Search {
+    /// This function returns the best move for the given board and color by performing a search.
     pub fn best_move(
         board: &mut Board,
         max_depth: i32,
@@ -15,7 +15,7 @@ impl Search{
         best_move.expect("No valid move found")
     }
 
- pub fn negamax(
+  pub fn negamax(
     board: &mut Board,
     depth: i32,
     mut alpha: i32,
@@ -33,7 +33,7 @@ impl Search{
         return (0, None); // Stalemate results in a draw
     }
 
-    let mut best_score = i32::MIN;
+    let mut best_score = i32::MIN + 1;  // Initialize with a value just above the minimum to prevent issues
     let mut best_move = None;
 
     let legal_moves = board.generate_legal_moves(color);
@@ -76,14 +76,5 @@ impl Search{
     (best_score, best_move)
 }
 
-
-    // fn evaluate_terminal(board: &Board, color: Color) -> i32 {
-    //      if GameState::is_checkmate(board, color) {
-    //         return -9999; // Negative high value for checkmate
-    //     } else if GameState::is_stalemate(board, color) {
-    //         return 0; // Stalemate results in a draw
-    //     }
-    //     0
-    // }
 
 }

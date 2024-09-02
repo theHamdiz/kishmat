@@ -24,5 +24,6 @@ comms = { path = "comms" }
 types = { path = "types" }
 search = { path = "search" }
 eval = { path = "eval" }
+rand = "0.9.0-alpha.2"
 
 

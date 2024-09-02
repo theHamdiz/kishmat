@@ -9,6 +9,12 @@ pub struct Arbiter {
     transposition_table: TranspositionTable,
 }
 
+impl Default for Arbiter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Arbiter {
     pub fn new() -> Self {
         Self {

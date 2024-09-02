@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use crate::board::Board;
 use crate::{clear_bit, get_lsb, Color, Piece, Square};
 
@@ -69,11 +70,11 @@ impl Board{
             to_square = Some(Square::from_str(to_square_str));
 
             let from_square_str = &parts[0][..parts[0].len() - 2];
-            from_square = self.find_pawn_source_square(from_square_str, to_square.unwrap(), color);
+            from_square = self.find_pawn_source_square(from_square_str, to_square.unwrap().unwrap(), color);
         } else if mov.len() == 2 {
             // Handle simple pawn moves like "e4"
             to_square = Some(Square::from_str(mov));
-            from_square = self.find_pawn_source_square("", to_square.unwrap(), color);
+            from_square = self.find_pawn_source_square("", to_square.unwrap().unwrap(), color);
         } else if mov.len() >= 3 {
             // Handle all other moves (e.g., "Nf3", "Rae1", "Qxb7", etc.)
             let (piece_char, rest) = if mov.chars().next().unwrap().is_uppercase() {
@@ -87,12 +88,12 @@ impl Board{
             to_square = Some(Square::from_str(last_two));
 
             let from_hint = &rest[..rest.len() - 2];
-            from_square = self.find_source_square(piece, from_hint, to_square.unwrap(), color);
+            from_square = self.find_source_square(piece, from_hint, to_square.unwrap().unwrap(), color);
         }
 
         (
             from_square.expect("Unable to determine source square"),
-            to_square.expect("Unable to determine target square"),
+            to_square.unwrap().expect("Unable to determine target square"),
             promotion,
         )
     }

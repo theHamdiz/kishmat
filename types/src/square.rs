@@ -30,22 +30,10 @@ impl Square {
 
     #[inline(always)]
     pub fn from_index(index: usize) -> Self {
-        debug_assert!(index < 64, "Index out of bounds for Square");
+        debug_assert!(index < 64, "Invalid move index: {}", index);
         unsafe { std::mem::transmute(index as u8) }
     }
-
-    #[inline(always)]
-    pub fn from_str(s: &str) -> Self {
-        debug_assert!(s.len() == 2, "Invalid square string length");
-
-        let bytes = s.as_bytes();
-        let file = (bytes[0] - b'a') as usize; // Convert 'a'-'h' to 0-7
-        let rank = (bytes[1] - b'1') as usize; // Convert '1'-'8' to 0-7
-
-        debug_assert!(file < 8 && rank < 8, "Invalid file or rank");
-
-        Square::new(rank, file)
-    }
+    
     
     #[inline(always)]
     pub fn rank_usize(self) -> usize {
@@ -93,8 +81,8 @@ impl FromStr for Square {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() == 2 {
             let bytes = s.as_bytes();
-            let file = (bytes[0] - b'a') as usize;
-            let rank = (bytes[1] - b'1') as usize;
+            let file = (bytes[0] - b'a') as usize; // Convert 'a'-'h' to 0-7
+            let rank = (bytes[1] - b'1') as usize; // Convert '1'-'8' to 0-7
 
             if file < 8 && rank < 8 {
                 return Ok(Square::new(rank, file));

@@ -141,6 +141,7 @@ dependencies = [
  "clap",
  "comms",
  "eval",
+ "rand",
  "search",
  "types",
 ]

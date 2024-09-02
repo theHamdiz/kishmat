@@ -64,15 +64,15 @@ impl Board{
     }
 
     #[inline(always)]
-    fn generate_move_from_square(&self, color: Color, mut moves: &mut Vec<(Square, Square)>, piece: i32, from_square: Square) {
+    fn generate_move_from_square(&self, color: Color, moves: &mut Vec<(Square, Square)>, piece: i32, from_square: Square) {
         // Generate moves for this piece from this square
         match Piece::from_u8(piece as u8).expect("Invalid piece index") {
-            Piece::Pawn => self.generate_pawn_moves(from_square, color, &mut moves),
-            Piece::Knight => self.generate_knight_moves(from_square, color, &mut moves),
-            Piece::Bishop => self.generate_bishop_moves(from_square, color, &mut moves),
-            Piece::Rook => self.generate_rook_moves(from_square, color, &mut moves),
-            Piece::Queen => self.generate_queen_moves(from_square, color, &mut moves),
-            Piece::King => self.generate_king_moves(from_square, color, &mut moves),
+            Piece::Pawn => self.generate_pawn_moves(from_square, color, moves),
+            Piece::Knight => self.generate_knight_moves(from_square, color, moves),
+            Piece::Bishop => self.generate_bishop_moves(from_square, color, moves),
+            Piece::Rook => self.generate_rook_moves(from_square, color, moves),
+            Piece::Queen => self.generate_queen_moves(from_square, color, moves),
+            Piece::King => self.generate_king_moves(from_square, color, moves),
         }
     }
 
@@ -90,42 +90,56 @@ impl Board{
     pub fn generate_pawn_moves(&self, from_square: Square, color: Color, moves: &mut Vec<(Square, Square)>) {
         let from_index = from_square.to_index();
         let direction = if color == Color::White { 8 } else { -8 };
-
+    
         // One-square forward move
-        let target_square = Square::from_index((from_index as isize + direction) as usize);
-        if !self.is_occupied(target_square) {
-            moves.push((from_square, target_square));
+        let target_index = (from_index as isize + direction) as usize;
+        if target_index < 64 {
+            let target_square = Square::from_index(target_index);
+            if !self.is_occupied(target_square) {
+                moves.push((from_square, target_square));
+    
+                // Two-square forward move from starting position
+                // println!("Color is: {:?}", color);
+                // println!("Generating moves for {:?} during {:?}", color, self.side_to_move);
 
-            // Two-square forward move from starting position
-            if (color == Color::White && from_square.rank_usize() == 1) ||
-               (color == Color::Black && from_square.rank_usize() == 6) {
-                let double_target = Square::from_index((from_index as isize + 2 * direction) as usize);
-                if !self.is_occupied(double_target) {
-                    moves.push((from_square, double_target));
+                let starting_rank = if color == Color::White { 1 } else { 6 };
+                if from_square.rank_usize() == starting_rank {
+                    let double_target_index = (from_index as isize + 2 * direction) as usize;
+                    if double_target_index < 64 {
+                        let double_target_square = Square::from_index(double_target_index);
+                        if !self.is_occupied(double_target_square) {
+                            moves.push((from_square, double_target_square));
+                        }
+                    }
                 }
             }
         }
-
+    
         // Captures
         for &offset in &[-1, 1] {
-            let capture_square = Square::from_index((from_index as isize + direction + offset) as usize);
-            if self.is_occupied_by_opponent(capture_square, color) {
-                moves.push((from_square, capture_square));
+            let capture_index = (from_index as isize + direction + offset) as usize;
+            if capture_index < 64 {
+                let capture_square = Square::from_index(capture_index);
+                if self.is_occupied_by_opponent(capture_square, color) {
+                    moves.push((from_square, capture_square));
+                }
             }
         }
     }
 
-     #[inline(always)]
+
+    #[inline(always)]
     pub fn generate_knight_moves(&self, from_square: Square, color: Color, moves: &mut Vec<(Square, Square)>) {
         let from_index = from_square.to_index();
         let knight_moves = [15, 17, 10, 6, -15, -17, -10, -6];
-
+    
         for &offset in &knight_moves {
-            let to_index = from_index as isize + offset;
-            if to_index >= 0 && to_index < 64 { // Ensure the index is within bounds
-                let to_square = Square::from_index(to_index as usize);
-                if !self.is_occupied_by_friendly(to_square, color) {
-                    moves.push((from_square, to_square));
+            if let Some(to_index) = from_index.checked_add(offset as usize) {
+                if to_index < 64 {
+                    let to_square = Square::from_index(to_index);
+                    if !self.is_occupied_by_friendly(to_square, color) {
+                        moves.push((from_square, to_square));
+                    }
                 }
             }
         }
@@ -159,7 +173,7 @@ impl Board{
             let to_index = from_index as isize + offset;
 
             // Ensure the index is within bounds and that it doesn't wrap around rows
-            if to_index >= 0 && to_index < 64 {
+            if (0..64).contains(&to_index) { // Same as: to_index >= 0 && to_index < 64
                 let to_square = Square::from_index(to_index as usize);
 
                 // Check for row wrapping: Ensure that moves don't wrap horizontally across the board
@@ -196,35 +210,40 @@ impl Board{
         // Get the piece at the starting square
         if let Some((piece, _)) = self.get_piece_at_square(from_square) {
             // Handle special cases: Castling, En Passant, Promotion
-            if piece == Piece::King {
-                // Handle castling
-                if from_square == Square::E1 && to_square == Square::G1 && color == Color::White {
-                    self.castle_kingside();
-                    return;
-                } else if from_square == Square::E1 && to_square == Square::C1 && color == Color::White {
-                    self.castle_queenside();
-                    return;
-                } else if from_square == Square::E8 && to_square == Square::G8 && color == Color::Black {
-                    self.castle_kingside();
-                    return;
-                } else if from_square == Square::E8 && to_square == Square::C8 && color == Color::Black {
-                    self.castle_queenside();
-                    return;
+           if piece == Piece::King {
+                if from_square == Square::E1 && color == Color::White {
+                    if to_square == Square::G1 {
+                        self.castle_kingside();
+                        return;
+                    } else if to_square == Square::C1 {
+                        self.castle_queenside();
+                        return;
+                    }
+                } else if from_square == Square::E8 && color == Color::Black {
+                    if to_square == Square::G8 {
+                        self.castle_kingside();
+                        return;
+                    } else if to_square == Square::C8 {
+                        self.castle_queenside();
+                        return;
+                    }
                 }
-            }
+           }
 
-            if piece == Piece::Pawn {
+           if piece == Piece::Pawn {
                 // Handle en passant
                 if let Some(ep_square) = self.en_passant {
                     if to_square == ep_square {
-                        let capture_square = Square::from_index((from_square.to_index() as isize + (if color == Color::White { -8 } else { 8 })) as usize);
-                        self.capture_piece(capture_square);
+                        let capture_index = (from_square.to_index() as isize + if color == Color::White { -8 } else { 8 }) as usize;
+                        if capture_index < 64 {
+                            let capture_square = Square::from_index(capture_index);
+                            self.capture_piece(capture_square);
+                        }
                     }
                 }
-
+            
                 // Handle promotion
-                if (color == Color::White && to_square.rank() == 7) || (color == Color::Black && to_square.rank() == 0) {
-                    // Assuming a promotion to Queen by default
+                if (color == Color::White && to_square.rank_usize() == 7) || (color == Color::Black && to_square.rank_usize() == 0) {
                     self.promote_pawn(to_square, Piece::Queen, color);
                     self.side_to_move = color.opponent();
                     return;
