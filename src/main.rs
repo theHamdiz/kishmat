@@ -179,9 +179,9 @@ fn repl(matches: ArgMatches) {
             _ => types::Color::White, // Default to White if invalid input
         };
 
-        println!("Player chose to play as {:?}", player_color);
+          println!("Player chose to play as {:?}", player_color);
 
-          let mut book = OpeningBook::new("../../../assets/books/Perfect_2010.abk");
+          let mut book = OpeningBook::new("assets\\books\\Perfect2023.bin");
           book.load_from_file().expect("Could not load book from file");
           run_play(depth, player_color, &book);
     } else if let Some(matches) = matches.subcommand_matches("analyze") {
@@ -226,7 +226,7 @@ fn repl(matches: ArgMatches) {
                         }
                         _ => types::Color::White, // Default to White if invalid input
                     };
-                    let mut book = OpeningBook::new("../../../assets/books/Perfect_2010.abk");
+                    let mut book = OpeningBook::new("assets\\books\\Perfect_2010.abk");
                     book.load_from_file().expect("Could not load book from file");
                     run_play(depth, player_color, &book);
                     break;

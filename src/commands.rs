@@ -104,13 +104,15 @@ pub fn run_play(depth: u32, player_color: Color, opening_book: &OpeningBook) {
     loop {
         let zobrist = Zobrist::default();
         let position_hash = board.compute_zobrist_hash(&zobrist);
-
+       
         if in_opening_phase {
             if let Some((book_move, opening_name)) = opening_book.get_move(position_hash) {
                 println!("Opening: {}", opening_name);
                 board.apply_move(OpeningBook::polyglot_move_to_squares(book_move), engine_color);
                 println!("Engine move (from book): {:?} -> {:?}", book_move, engine_color);
             } else {
+                println!("No opening found in book for the current position.");
+                println!("Opening phase complete");
                 in_opening_phase = false;
             }
         }

@@ -7,6 +7,7 @@ pub mod null_move;
 pub mod lmr;
 pub mod search;
 pub mod opening_book;
+mod polyglot_book;
 
 pub use search::Search;
 

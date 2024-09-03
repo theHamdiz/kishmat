@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufReader, Read};
 use types::Square;
+use std::env;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct OpeningBook {
@@ -12,8 +14,13 @@ pub struct OpeningBook {
 impl OpeningBook {
     // Constructor to create an OpeningBook with a file path
     pub fn new(file_path: &str) -> Self {
+        let exe_path = env::current_exe().expect("Failed to get current executable path");
+        let exe_dir = exe_path.parent().expect("Failed to get the executable directory").parent().unwrap().parent().unwrap();
+         
+        let relative_path = Path::new(file_path);
+        let book_file: PathBuf = exe_dir.join(relative_path);
         OpeningBook {
-            file_path: file_path.to_string(),
+            file_path: book_file.to_str().unwrap().to_string(),
             book: HashMap::new(),
         }
     }
@@ -36,6 +43,7 @@ impl OpeningBook {
                 .push((polyglot_move, opening_name));
         }
 
+        println!("Opening book loaded successfully");
         Ok(())
     }
 
